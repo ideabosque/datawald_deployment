@@ -1,0 +1,469 @@
+{
+   "AWSTemplateFormatVersion": "2010-09-09",
+   "Resources": {
+      "SilvaEngineMicroCoreExecRole": {
+         "Type": "AWS::IAM::Role",
+         "Properties": {
+            "AssumeRolePolicyDocument": {
+               "Version": "2012-10-17",
+               "Statement": [
+                  {
+                     "Effect": "Allow",
+                     "Principal": {
+                        "Service": [
+                           "lambda.amazonaws.com"
+                        ]
+                     },
+                     "Action": [
+                        "sts:AssumeRole"
+                     ]
+                  }
+               ]
+            },
+            "RoleName": "silvaengine_microcore_dw_exec",
+            "Path": "/",
+            "Policies": [
+               {
+                  "PolicyName": "silvaengine_microcore_dw_exec_policy",
+                  "PolicyDocument": {
+                     "Version": "2012-10-17",
+                     "Statement": [
+                        {
+                           "Action": [
+                              "logs:CreateLogGroup",
+                              "logs:CreateLogStream",
+                              "logs:PutLogEvents"
+                           ],
+                           "Resource": "arn:aws:logs:*:*:*",
+                           "Effect": "Allow"
+                        },
+                        {
+                           "Action": [
+                              "sqs:*",
+                              "dynamodb:*",
+                              "cloudwatch:*",
+                              "iam:ListRoles",
+                              "sns:*",
+                              "lambda:*",
+                              "ec2:*",
+                              "cognito-idp:*",
+                              "s3:*"
+                           ],
+                           "Resource": "*",
+                           "Effect": "Allow"
+                        },
+                        {
+                           "Action": [
+                              "iam:ListRoles",
+                              "iam:ListOpenIdConnectProviders",
+                              "sns:ListPlatformApplications"
+                           ],
+                           "Resource": "*",
+                           "Effect": "Allow"
+                        }
+                     ]
+                  }
+               }
+            ]
+         }
+      },
+      "SilvaEngineMicroCoreLayer": {
+         "Type": "AWS::Lambda::LayerVersion",
+         "Properties": {
+            "CompatibleRuntimes": [
+               "python3.8",
+               "python3.9",
+               "python3.10",
+               "python3.11"
+            ],
+            "Content": {
+               "S3Bucket": null,
+               "S3Key": "silvaengine_microcore_dw_layer.zip"
+            },
+            "Description": "SilvaEngine MicroCore Layer",
+            "LayerName": "silvaengine_microcore_dw_layer",
+            "LicenseInfo": "MIT"
+         }
+      },
+      "SilvaEngineMicroCoreLayerPermission": {
+         "Type": "AWS::Lambda::LayerVersionPermission",
+         "Properties": {
+            "Action": "lambda:GetLayerVersion",
+            "LayerVersionArn": {
+               "Ref": "SilvaEngineMicroCoreLayer"
+            },
+            "Principal": {
+               "Ref": "AWS::AccountId"
+            }
+         }
+      },
+      "SilvaEngineMicroCoreDW": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_microcore_dw",
+            "Handler": "workers.handler",
+            "Layers": [
+               "silvaengine_layer",
+               {
+                  "Ref": "SilvaEngineMicroCoreLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineMicroCoreExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_microcore_dw.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2"
+               }
+            },
+            "MemorySize": 1024
+         },
+         "DependsOn": [
+            "SilvaEngineMicroCoreExecRole",
+            "SilvaEngineMicroCoreLayer"
+         ]
+      },
+      "SilvaEngineMicroCoreNS": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_microcore_ns",
+            "Handler": "workers.handler",
+            "Layers": [
+               "silvaengine_layer",
+               {
+                  "Ref": "SilvaEngineMicroCoreLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineMicroCoreExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_microcore_ns.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2"
+               }
+            },
+            "MemorySize": 1024
+         },
+         "DependsOn": [
+            "SilvaEngineMicroCoreExecRole",
+            "SilvaEngineMicroCoreLayer"
+         ]
+      },
+      "SilvaEngineMicroCoreSQS": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_microcore_sqs",
+            "Handler": "workers.handler",
+            "Layers": [
+               "silvaengine_layer",
+               {
+                  "Ref": "SilvaEngineMicroCoreLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineMicroCoreExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_microcore_sqs.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2"
+               }
+            },
+            "MemorySize": 1024
+         },
+         "DependsOn": [
+            "SilvaEngineMicroCoreExecRole",
+            "SilvaEngineMicroCoreLayer"
+         ]
+      },
+      "SilvaEngineMicroCoreDynamoDB": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_microcore_dynamodb",
+            "Handler": "workers.handler",
+            "Layers": [
+               "silvaengine_layer",
+               {
+                  "Ref": "SilvaEngineMicroCoreLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineMicroCoreExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_microcore_dynamodb.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2"
+               }
+            },
+            "MemorySize": 1024
+         },
+         "DependsOn": [
+            "SilvaEngineMicroCoreExecRole",
+            "SilvaEngineMicroCoreLayer"
+         ]
+      },
+      "SilvaEngineMicroCoreS3": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_microcore_s3",
+            "Handler": "workers.handler",
+            "Layers": [
+               "silvaengine_layer",
+               {
+                  "Ref": "SilvaEngineMicroCoreLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineMicroCoreExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_microcore_s3.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2",
+                  "EFSMOUNTPOINT":"/mnt",
+                  "PYTHONPACKAGESPATH":"pypackages"
+               }
+            },
+            "MemorySize": 1024
+         },
+         "DependsOn": [
+            "SilvaEngineMicroCoreExecRole",
+            "SilvaEngineMicroCoreLayer"
+         ]
+      },
+      "SilvaEngineMicroCoreMage2": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_microcore_mage2",
+            "Handler": "workers.handler",
+            "Layers": [
+               "silvaengine_layer",
+               {
+                  "Ref": "SilvaEngineMicroCoreLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineMicroCoreExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_microcore_mage2.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2"
+               }
+            },
+            "MemorySize": 1024
+         },
+         "DependsOn": [
+            "SilvaEngineMicroCoreExecRole",
+            "SilvaEngineMicroCoreLayer"
+         ]
+      },
+      "SilvaEngineMicroCoreHubspot": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_microcore_hubspot",
+            "Handler": "workers.handler",
+            "Layers": [
+               "silvaengine_layer",
+               {
+                  "Ref": "SilvaEngineMicroCoreLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineMicroCoreExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_microcore_hubspot.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2"
+               }
+            },
+            "MemorySize": 1024
+         },
+         "DependsOn": [
+            "SilvaEngineMicroCoreExecRole",
+            "SilvaEngineMicroCoreLayer"
+         ]
+      },
+      "DWSyncTask": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "dw-sync_task",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "tx_type",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "source",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "tx_type",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "id",
+                  "KeyType": "RANGE"
+               }
+            ],
+            "LocalSecondaryIndexes": [
+               {
+                  "IndexName": "tx_type-source-index",
+                  "KeySchema": [
+                     {
+                        "AttributeName": "tx_type",
+                        "KeyType": "HASH"
+                     },
+                     {
+                        "AttributeName": "source",
+                        "KeyType": "RANGE"
+                     }
+                  ],
+                  "Projection": {
+                     "NonKeyAttributes": [],
+                     "ProjectionType": "ALL"
+                  }
+               }
+            ]
+         }
+      },
+      "DWTXStaging": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "dw-tx_staging",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "source_target",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "tx_type_src_id",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "source_target",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "tx_type_src_id",
+                  "KeyType": "RANGE"
+               }
+            ]
+         }
+      },
+      "DWProductMetadata": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "dw-product_metadata",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "target_source",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "column",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "target_source",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "column",
+                  "KeyType": "RANGE"
+               }
+            ]
+         }
+      },
+      "DataWaldInputQueue": {
+         "Type": "AWS::SQS::Queue",
+         "Properties": {
+            "ContentBasedDeduplication": true,
+            "DeduplicationScope": "messageGroup",
+            "FifoQueue": true,
+            "QueueName": "datawald_input_queue.fifo",
+            "VisibilityTimeout": 900
+         }
+      }
+   }
+}

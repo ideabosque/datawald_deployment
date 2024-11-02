@@ -1,0 +1,197 @@
+{
+    "functions": {
+        "silvaengine_microcore_dw": {
+            "endpoint_id": "dw",
+            "base": "/beehive/microcore",
+            "packages": [],
+            "package_files": [],
+            "files": {},
+            "hooks": {
+                "packages": [
+                    "silvaengine_permission",
+                    "silvaengine_resource",
+                    "datawald_interface_engine"
+                ],
+                "events": {
+                    "deploy": [
+                        {
+                            "package_name": "silvaengine_resource",
+                            "class_name": "Resource",
+                            "function_name": "add_resource"
+                        }
+                    ]
+                }
+            }
+        },
+        "silvaengine_microcore_ns": {
+            "endpoint_id": "ns",
+            "base": "/beehive/microcore",
+            "packages": [],
+            "package_files": [],
+            "files": {},
+            "hooks": {
+                "packages": [
+                    "silvaengine_permission",
+                    "silvaengine_resource",
+                    "datawald_nsagent"
+                ],
+                "events": {
+                    "deploy": [
+                        {
+                            "package_name": "silvaengine_resource",
+                            "class_name": "Resource",
+                            "function_name": "add_resource"
+                        }
+                    ]
+                }
+            }
+        },
+        "silvaengine_microcore_sqs": {
+            "endpoint_id": "sqs",
+            "base": "/beehive/microcore",
+            "packages": [],
+            "package_files": [],
+            "files": {},
+            "hooks": {
+                "packages": [
+                    "silvaengine_permission",
+                    "silvaengine_resource",
+                    "datawald_sqsagent"
+                ],
+                "events": {
+                    "deploy": [
+                        {
+                            "package_name": "silvaengine_resource",
+                            "class_name": "Resource",
+                            "function_name": "add_resource"
+                        }
+                    ]
+                }
+            }
+        },
+        "silvaengine_microcore_dynamodb": {
+            "endpoint_id": "datamart",
+            "base": "/beehive/microcore",
+            "packages": [],
+            "package_files": [],
+            "files": {},
+            "hooks": {
+                "packages": [
+                    "silvaengine_permission",
+                    "silvaengine_resource",
+                    "datawald_dynamodbagent"
+                ],
+                "events": {
+                    "deploy": [
+                        {
+                            "package_name": "silvaengine_resource",
+                            "class_name": "Resource",
+                            "function_name": "add_resource"
+                        }
+                    ]
+                }
+            }
+        },
+        "silvaengine_microcore_s3": {
+            "endpoint_id": "s3",
+            "base": "/beehive/microcore",
+            "packages": [],
+            "package_files": [],
+            "files": {},
+            "hooks": {
+                "packages": [
+                    "silvaengine_permission",
+                    "silvaengine_resource",
+                    "datawald_s3agent"
+                ],
+                "events": {
+                    "deploy": [
+                        {
+                            "package_name": "silvaengine_resource",
+                            "class_name": "Resource",
+                            "function_name": "add_resource"
+                        }
+                    ]
+                }
+            }
+        },
+        "silvaengine_microcore_mage2": {
+            "endpoint_id": "mage2",
+            "base": "/beehive/microcore",
+            "packages": [],
+            "package_files": [],
+            "files": {},
+            "hooks": {
+                "packages": [
+                    "silvaengine_permission",
+                    "silvaengine_resource",
+                    "datawald_mage2agency"
+                ],
+                "events": {
+                    "deploy": [
+                        {
+                            "package_name": "silvaengine_resource",
+                            "class_name": "Resource",
+                            "function_name": "add_resource"
+                        }
+                    ]
+                }
+            }
+        },
+        "silvaengine_microcore_hubspot": {
+            "endpoint_id": "hubspot",
+            "base": "/beehive/microcore",
+            "packages": [],
+            "package_files": [],
+            "files": {},
+            "hooks": {
+                "packages": [
+                    "silvaengine_permission",
+                    "silvaengine_resource",
+                    "datawald_hubspotagency"
+                ],
+                "events": {
+                    "deploy": [
+                        {
+                            "package_name": "silvaengine_resource",
+                            "class_name": "Resource",
+                            "function_name": "add_resource"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "layers": {
+        "silvaengine_microcore_dw_layer": {
+            "packages": [
+                "silvaengine_resource",
+                "silvaengine_permission",
+                "datawald_interface_engine",
+                "datawald_agency",
+                "datawald_nsagency",
+                "datawald_sqsagency",
+                "datawald_dynamodbagency",
+                "datawald_s3agency",
+                "datawald_ss3agency",
+                "datawald_mage2agency",
+                "datawald_hubspotagency",
+                "datawald_connector",
+                "suitetalk_connector",
+                "sqs_connector",
+                "dynamodb_connector",
+                "s3_connector",
+                "ss3_connector",
+                "mage2_connector",
+                "hubspot_connector",
+                "certifi",
+                "certifi-2022.9.24.dist-info",
+                "certifi-2022.12.7.dist-info",
+                "hubspot",
+                "hubspot_api_client-6.0.0.dist-info"
+            ],
+            "package_files": [],
+            "files": {}
+        }
+    }
+}
