@@ -15,4 +15,4 @@ echo "y" | pip uninstall datawald_hubspotagency && pip install git+ssh://git@git
 echo "y" | pip uninstall mage2_connector && pip install git+ssh://git@github.com/ideabosque/mage2_connector.git@main#egg=mage2_connector
 echo "y" | pip uninstall datawald_mage2agency && pip install git+ssh://git@github.com/ideabosque/datawald_mage2agency.git@main#egg=datawald_mage2agency
 
-python3.8 cloudformation_stack.py .env silvaengine-microcore-dw
+python cloudformation_stack.py .env silvaengine-microcore-dw
