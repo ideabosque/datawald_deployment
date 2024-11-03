@@ -1,0 +1,842 @@
+{
+   "AWSTemplateFormatVersion": "2010-09-09",
+   "Resources": {
+      "SilvaEngineExecRole": {
+         "Type": "AWS::IAM::Role",
+         "Properties": {
+            "AssumeRolePolicyDocument": {
+               "Version": "2012-10-17",
+               "Statement": [
+                  {
+                     "Effect": "Allow",
+                     "Principal": {
+                        "Service": [
+                           "lambda.amazonaws.com"
+                        ]
+                     },
+                     "Action": [
+                        "sts:AssumeRole"
+                     ]
+                  }
+               ]
+            },
+            "RoleName": "silvaengine_exec",
+            "Path": "/",
+            "Policies": [
+               {
+                  "PolicyName": "silvaengine_exec_policy",
+                  "PolicyDocument": {
+                     "Version": "2012-10-17",
+                     "Statement": [
+                        {
+                           "Action": [
+                              "logs:CreateLogGroup",
+                              "logs:CreateLogStream",
+                              "logs:PutLogEvents"
+                           ],
+                           "Resource": "arn:aws:logs:*:*:*",
+                           "Effect": "Allow"
+                        },
+                        {
+                           "Action": [
+                              "sqs:*",
+                              "dynamodb:*",
+                              "cloudwatch:*",
+                              "iam:ListRoles",
+                              "sns:*",
+                              "lambda:*",
+                              "ec2:*",
+                              "cognito-idp:*"
+                           ],
+                           "Resource": "*",
+                           "Effect": "Allow"
+                        },
+                        {
+                           "Action": [
+                              "iam:ListRoles",
+                              "iam:ListOpenIdConnectProviders",
+                              "sns:ListPlatformApplications",
+                              "execute-api:ManageConnections"
+                           ],
+                           "Resource": "*",
+                           "Effect": "Allow"
+                        }
+                     ]
+                  }
+               }
+            ]
+         }
+      },
+      "SilvaEngineLogSNSTopic": {
+         "Type": "AWS::SNS::Topic",
+         "Properties": {
+            "Subscription": [],
+            "TopicName": "silvaEngineLog"
+         }
+      },
+      "SilvaEngineAreaResource": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_area_resource",
+            "Handler": "resources.handler",
+            "Layers": [
+               {
+                  "Ref": "SilvaEngineLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_area_resource.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2"
+               }
+            },
+            "MemorySize": 512
+         },
+         "DependsOn": [
+            "SilvaEngineExecRole",
+            "SilvaEngineLayer"
+         ]
+      },
+      "SilvaEngineAgentTask": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_agenttask",
+            "Handler": "tasks.handler",
+            "Layers": [
+               {
+                  "Ref": "SilvaEngineLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_agenttask.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2",
+                  "DYNAMODBSTREAMENDPOINTID": "datamart"
+               }
+            },
+            "MemorySize": 512
+         },
+         "DependsOn": [
+            "SilvaEngineExecRole",
+            "SilvaEngineLayer"
+         ]
+      },
+      "SilvaEngineLayer": {
+         "Type": "AWS::Lambda::LayerVersion",
+         "Properties": {
+            "CompatibleRuntimes": [
+               "python3.8",
+               "python3.9",
+               "python3.10",
+               "python3.11"
+            ],
+            "Content": {
+               "S3Bucket": null,
+               "S3Key": "silvaengine_layer.zip"
+            },
+            "Description": "SilvaEngine Layer",
+            "LayerName": "silvaengine_layer",
+            "LicenseInfo": "MIT"
+         }
+      },
+      "SilvaEngineLayerPermission": {
+         "Type": "AWS::Lambda::LayerVersionPermission",
+         "Properties": {
+            "Action": "lambda:GetLayerVersion",
+            "LayerVersionArn": {
+               "Ref": "SilvaEngineLayer"
+            },
+            "Principal": {
+               "Ref": "AWS::AccountId"
+            }
+         }
+      },
+      "SilvaEngineTaskQueue": {
+         "Type": "AWS::SQS::Queue",
+         "Properties": {
+            "ContentBasedDeduplication": true,
+            "DeduplicationScope": "messageGroup",
+            "FifoQueue": true,
+            "QueueName": "silvaengine_task_queue.fifo",
+            "VisibilityTimeout": 900
+         }
+      },
+      "SilvaEngineTaskEventSourceMapping": {
+         "Type": "AWS::Lambda::EventSourceMapping",
+         "Properties": {
+            "BatchSize": 10,
+            "Enabled": true,
+            "EventSourceArn": {
+               "Fn::GetAtt": [
+                  "SilvaEngineTaskQueue",
+                  "Arn"
+               ]
+            },
+            "FunctionName": {
+               "Fn::GetAtt": [
+                  "SilvaEngineAgentTask",
+                  "Arn"
+               ]
+            },
+            "MaximumBatchingWindowInSeconds": 0
+         },
+         "DependsOn": [
+            "SilvaEngineTaskQueue",
+            "SilvaEngineAgentTask"
+         ]
+      },
+      "SilvaEngineConfigdata": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-configdata",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "setting_id",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "variable",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "setting_id",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "variable",
+                  "KeyType": "RANGE"
+               }
+            ]
+         }
+      },
+      "SilvaEngineEndpoints": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-endpoints",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "endpoint_id",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "endpoint_id",
+                  "KeyType": "HASH"
+               }
+            ]
+         },
+         "DependsOn": [
+            "SilvaEngineConfigdata"
+         ]
+      },
+      "SilvaEngineConnections": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-connections",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "endpoint_id",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "api_key",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "endpoint_id",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "api_key",
+                  "KeyType": "RANGE"
+               }
+            ]
+         },
+         "DependsOn": [
+            "SilvaEngineEndpoints"
+         ]
+      },
+      "SilvaEngineFunctions": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-functions",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "aws_lambda_arn",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "function",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "aws_lambda_arn",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "function",
+                  "KeyType": "RANGE"
+               }
+            ]
+         },
+         "DependsOn": [
+            "SilvaEngineConnections"
+         ]
+      },
+      "SilvaEngineNotifications": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-notifications",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "apply_to",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "type",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "apply_to",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "type",
+                  "KeyType": "RANGE"
+               }
+            ]
+         }
+      },
+      "SilvaEngineRoles": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-roles",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "role_id",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "role_id",
+                  "KeyType": "HASH"
+               }
+            ]
+         }
+      },
+      "SilvaEngineResources": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-resources",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "resource_id",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "service",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "resource_id",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "service",
+                  "KeyType": "RANGE"
+               }
+            ]
+         }
+      },
+      "SilvaEngineRelationships": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-relationships",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "relationship_id",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "relationship_id",
+                  "KeyType": "HASH"
+               }
+            ]
+         }
+      },
+      "SilvaEngineEventLogs": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-event_logs",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "subject_type",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "log_id",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "subject_type",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "log_id",
+                  "KeyType": "RANGE"
+               }
+            ]
+         }
+      },
+      "SilvaEngineWSSConnections": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-wss-connections",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "endpoint_id",
+                  "AttributeType": "S"
+               },
+               {
+                  "AttributeName": "connection_id",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "endpoint_id",
+                  "KeyType": "HASH"
+               },
+               {
+                  "AttributeName": "connection_id",
+                  "KeyType": "RANGE"
+               }
+            ],
+            "GlobalSecondaryIndexes": [
+               {
+                  "IndexName": "connection_id-index",
+                  "KeySchema": [
+                     {
+                        "AttributeName": "connection_id",
+                        "KeyType": "HASH"
+                     }
+                  ],
+                  "Projection": {
+                     "ProjectionType": "ALL"
+                  }
+               }
+            ]
+         }
+      },
+      "SilvaEngineLocks": {
+         "Type": "AWS::DynamoDB::Table",
+         "Properties": {
+            "TableName": "se-locks",
+            "BillingMode": "PAY_PER_REQUEST",
+            "AttributeDefinitions": [
+               {
+                  "AttributeName": "identifier",
+                  "AttributeType": "S"
+               }
+            ],
+            "KeySchema": [
+               {
+                  "AttributeName": "identifier",
+                  "KeyType": "HASH"
+               }
+            ]
+         }
+      },
+      "SilvaEngineApi": {
+         "Type": "AWS::ApiGateway::RestApi",
+         "Properties": {
+            "Name": "silvaengine_api"
+         }
+      },
+      "Area": {
+         "Type": "AWS::ApiGateway::Resource",
+         "Properties": {
+            "RestApiId": {
+               "Ref": "SilvaEngineApi"
+            },
+            "ParentId": {
+               "Fn::GetAtt": [
+                  "SilvaEngineApi",
+                  "RootResourceId"
+               ]
+            },
+            "PathPart": "{area}"
+         }
+      },
+      "EndpointId": {
+         "Type": "AWS::ApiGateway::Resource",
+         "Properties": {
+            "RestApiId": {
+               "Ref": "SilvaEngineApi"
+            },
+            "ParentId": {
+               "Ref": "Area"
+            },
+            "PathPart": "{endpoint_id}"
+         }
+      },
+      "AreaProxyResource": {
+         "Type": "AWS::ApiGateway::Resource",
+         "Properties": {
+            "RestApiId": {
+               "Ref": "SilvaEngineApi"
+            },
+            "ParentId": {
+               "Ref": "EndpointId"
+            },
+            "PathPart": "{proxy+}"
+         }
+      },
+      "AreaProxyMethod": {
+         "Type": "AWS::ApiGateway::Method",
+         "Properties": {
+            "RestApiId": {
+               "Ref": "SilvaEngineApi"
+            },
+            "ResourceId": {
+               "Ref": "AreaProxyResource"
+            },
+            "ApiKeyRequired": true,
+            "AuthorizationType": "NONE",
+            "HttpMethod": "ANY",
+            "RequestParameters": {
+               "method.request.path.proxy": true,
+               "method.request.path.endpoint_id": true
+            },
+            "Integration": {
+               "Type": "AWS_PROXY",
+               "IntegrationHttpMethod": "POST",
+               "Uri": {
+                  "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SilvaEngineAreaResource.Arn}/invocations"
+               }
+            },
+            "MethodResponses": [
+               {
+                  "ResponseModels": {
+                     "application/json": "Empty"
+                  },
+                  "StatusCode": 200
+               }
+            ]
+         }
+      },
+      "AreaOptionsMethod": {
+         "Type": "AWS::ApiGateway::Method",
+         "Properties": {
+            "AuthorizationType": "NONE",
+            "RestApiId": {
+               "Ref": "SilvaEngineApi"
+            },
+            "ResourceId": {
+               "Ref": "AreaProxyResource"
+            },
+            "RequestParameters": {
+               "method.request.header.X-Requested-With": false,
+               "method.request.header.X-CSRF-TOKEN": false
+            },
+            "HttpMethod": "OPTIONS",
+            "Integration": {
+               "IntegrationResponses": [
+                  {
+                     "StatusCode": 200,
+                     "ResponseParameters": {
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Requested-With,X-CSRF-TOKEN,SELLER_ID,TEAM_ID,TEAM_TYPE,team_type,seller_id,team_id,X-Api-Name,x-api-name,X-API-NAME'",
+                        "method.response.header.Access-Control-Allow-Methods": "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'"
+                     },
+                     "ResponseTemplates": {
+                        "application/json": ""
+                     }
+                  }
+               ],
+               "PassthroughBehavior": "WHEN_NO_MATCH",
+               "RequestTemplates": {
+                  "application/json": "{\"statusCode\": 200}"
+               },
+               "Type": "MOCK"
+            },
+            "MethodResponses": [
+               {
+                  "StatusCode": 200,
+                  "ResponseModels": {
+                     "application/json": "Empty"
+                  },
+                  "ResponseParameters": {
+                     "method.response.header.Access-Control-Allow-Headers": false,
+                     "method.response.header.Access-Control-Allow-Methods": false,
+                     "method.response.header.Access-Control-Allow-Origin": false
+                  }
+               }
+            ]
+         }
+      },
+      "AreaInvokePermission": {
+         "Type": "AWS::Lambda::Permission",
+         "DependsOn": [
+            "SilvaEngineApi",
+            "SilvaEngineAreaResource"
+         ],
+         "Properties": {
+            "FunctionName": {
+               "Fn::GetAtt": [
+                  "SilvaEngineAreaResource",
+                  "Arn"
+               ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+               "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SilvaEngineApi}/*/*/*/*"
+            }
+         }
+      },
+      "SilvaEngineApiDeployment": {
+         "Type": "AWS::ApiGateway::Deployment",
+         "Properties": {
+            "RestApiId": {
+               "Ref": "SilvaEngineApi"
+            }
+         },
+         "DependsOn": [
+            "SilvaEngineApi",
+            "AreaProxyMethod",
+            "AreaOptionsMethod"
+         ]
+      },
+      "BetaStage": {
+         "Type": "AWS::ApiGateway::Stage",
+         "Properties": {
+            "StageName": "beta",
+            "Description": "Beta Stage",
+            "RestApiId": {
+               "Ref": "SilvaEngineApi"
+            },
+            "DeploymentId": {
+               "Ref": "SilvaEngineApiDeployment"
+            }
+         }
+      },
+      "BetaUsagePlan": {
+         "Type": "AWS::ApiGateway::UsagePlan",
+         "DependsOn": [
+            "SilvaEngineApi",
+            "BetaStage"
+         ],
+         "Properties": {
+            "ApiStages": [
+               {
+                  "ApiId": {
+                     "Ref": "SilvaEngineApi"
+                  },
+                  "Stage": {
+                     "Ref": "BetaStage"
+                  }
+               }
+            ],
+            "Description": "Beta usage plan",
+            "Quota": {
+               "Limit": 5000,
+               "Period": "MONTH"
+            },
+            "Throttle": {
+               "BurstLimit": 200,
+               "RateLimit": 100
+            },
+            "UsagePlanName": "Beta"
+         }
+      },
+      "SilvaEngineBetaApiKey": {
+         "Type": "AWS::ApiGateway::ApiKey",
+         "DependsOn": [
+            "SilvaEngineApiDeployment",
+            "BetaStage"
+         ],
+         "Properties": {
+            "Name": "SilvaEngineBeta",
+            "Description": "CloudFormation API Key V1",
+            "Enabled": "true",
+            "StageKeys": [
+               {
+                  "RestApiId": {
+                     "Ref": "SilvaEngineApi"
+                  },
+                  "StageName": "beta"
+               }
+            ]
+         }
+      },
+      "SilvaEngineBetaUsagePlanKey": {
+         "Type": "AWS::ApiGateway::UsagePlanKey",
+         "Properties": {
+            "KeyId": {
+               "Ref": "SilvaEngineBetaApiKey"
+            },
+            "KeyType": "API_KEY",
+            "UsagePlanId": {
+               "Ref": "BetaUsagePlan"
+            }
+         }
+      },
+      "SilvaEngineWebSocketApi": {
+         "Type": "AWS::ApiGatewayV2::Api",
+         "Properties": {
+            "Name": "SilvaEngineWebSocketApi",
+            "ProtocolType": "WEBSOCKET",
+            "RouteSelectionExpression": "$request.body.action"
+         }
+      },
+      "SilvaEngineWebSocketConnectRoute": {
+         "Type": "AWS::ApiGatewayV2::Route",
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineWebSocketApi"
+            },
+            "RouteKey": "$connect",
+            "AuthorizationType": "NONE",
+            "Target": {
+               "Fn::Join": [
+                  "/",
+                  [
+                     "integrations",
+                     {
+                        "Ref": "SilvaEngineWebSocketLambdaIntegration"
+                     }
+                  ]
+               ]
+            }
+         }
+      },
+      "SilvaEngineWebSocketDisconnectRoute": {
+         "Type": "AWS::ApiGatewayV2::Route",
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineWebSocketApi"
+            },
+            "RouteKey": "$disconnect",
+            "AuthorizationType": "NONE",
+            "Target": {
+               "Fn::Join": [
+                  "/",
+                  [
+                     "integrations",
+                     {
+                        "Ref": "SilvaEngineWebSocketLambdaIntegration"
+                     }
+                  ]
+               ]
+            }
+         }
+      },
+      "SilvaEngineWebSocketStreamRoute": {
+         "Type": "AWS::ApiGatewayV2::Route",
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineWebSocketApi"
+            },
+            "RouteKey": "stream",
+            "AuthorizationType": "NONE",
+            "Target": {
+               "Fn::Join": [
+                  "/",
+                  [
+                     "integrations",
+                     {
+                        "Ref": "SilvaEngineWebSocketLambdaIntegration"
+                     }
+                  ]
+               ]
+            }
+         }
+      },
+      "SilvaEngineWebSocketLambdaIntegration": {
+         "Type": "AWS::ApiGatewayV2::Integration",
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineWebSocketApi"
+            },
+            "IntegrationType": "AWS_PROXY",
+            "IntegrationUri": {
+               "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SilvaEngineAreaResource.Arn}/invocations"
+            }
+         }
+      },
+      "SilvaEngineWebSocketStage": {
+         "Type": "AWS::ApiGatewayV2::Stage",
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineWebSocketApi"
+            },
+            "StageName": "beta",
+            "AutoDeploy": true
+         }
+      },
+      "SilvaEngineWebSocketPermission": {
+         "Type": "AWS::Lambda::Permission",
+         "Properties": {
+            "FunctionName": {
+               "Ref": "SilvaEngineAreaResource"
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+               "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SilvaEngineWebSocketApi}/*"
+            }
+         }
+      }
+   }
+}
