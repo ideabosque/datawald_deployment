@@ -6,6 +6,7 @@ __author__ = "bibow"
 
 import importlib
 import json
+import logging
 import os
 import sys
 import zipfile
@@ -15,96 +16,42 @@ from time import sleep
 
 import boto3
 import dotenv
-from botocore.configloader import load_config
 from botocore.exceptions import ClientError
 
-# Look for a .env file
-if len(sys.argv) == 3:
-    dotenv.load_dotenv(sys.argv[-2])
-else:
-    dotenv.load_dotenv(".env")
+# Load environment variables from .env file
+dotenv.load_dotenv(sys.argv[-2] if len(sys.argv) == 3 else ".env")
 
-lambda_config = json.load(
-    open(
-        f"{os.path.abspath(os.path.dirname(__file__))}/lambda_config.json",
-        "r",
-    )
-)
-root_path = os.getenv("root_path")
-site_packages = os.getenv("site_packages")
-functions = os.getenv("functions", "").split(",")
-layers = os.getenv("layers", "").split(",")
-
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    handlers=[
-        # logging.FileHandler("cloudformation_stack.log"),
-        logging.StreamHandler(sys.stdout)
-    ],
-)
+# Set up logging
+logging.basicConfig(level=logging.INFO, handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger()
 
+# Load configuration
+lambda_config_path = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)), "lambda_config.json"
+)
+lambda_config = json.load(open(lambda_config_path, "r"))
 
-def execute_hook(lambda_function_name, function_config, hook_function_name):
-    if not function_config.get("hooks") or not function_config.get("endpoint_id"):
-        return
-
-    packages = function_config.get("hooks", {}).get("packages")
-    if type(packages) is not list or len(packages) < 1:
-        return
-    print(packages)
-    events = function_config.get("hooks", {}).get("events")
-    if type(events) is not dict or len(events) < 1:
-        return
-
-    hooks = events.get(hook_function_name)
-    if type(hooks) is not list or len(hooks) < 1:
-        return
-
-    requires = ["package_name", "function_name"]
-    for hook in hooks:
-        if requires != [v for v in requires if v in hook.keys()]:
-            continue
-
-        print(hook.get("package_name"))
-        spec = importlib.util.find_spec(hook.get("package_name"))
-
-        if spec is None:
-            continue
-
-        agent = importlib.import_module(hook.get("package_name"))
-        if hook.get("class_name"):
-            agent = getattr(agent, hook.get("class_name"))
-
-        agent = getattr(agent, hook.get("function_name"))
-        if callable(agent):
-            agent(
-                str(lambda_function_name).strip(),
-                str(function_config.get("endpoint_id")).strip(),
-                packages,
-            )
-    logger.info(f"Execute {hook_function_name} hooks.")
+# Environment variables
+root_path = os.getenv("root_path")
+site_packages = os.getenv("site_packages")
+# functions = os.getenv("functions", "").split(",")
+# layers = os.getenv("layers", "").split(",")
 
 
-# Helper class to convert a DynamoDB item to JSON.
+# Helper class to convert a DynamoDB item to JSON
 class JSONEncoder(json.JSONEncoder):
-    def default(self, o):  # pylint: disable=method-hidden
+    def default(self, o):
         if isinstance(o, Decimal):
-            if o % 1 > 0:
-                return float(o)
-            else:
-                return int(o)
+            return float(o) if o % 1 > 0 else int(o)
         elif isinstance(o, (datetime, date)):
             return o.strftime("%Y-%m-%d %H:%M:%S")
         elif isinstance(o, (bytes, bytearray)):
             return str(o)
-        else:
-            return super(JSONEncoder, self).default(o)
+        return super(JSONEncoder, self).default(o)
 
 
-class CloudformationStack(object):
+# Main CloudFormation Stack class
+class CloudformationStack:
     def __init__(self):
         self.aws_cloudformation = boto3.client(
             "cloudformation",
@@ -128,189 +75,115 @@ class CloudformationStack(object):
     @staticmethod
     def zip_dir(dirpath, fzip, is_package=True):
         basedir = os.path.dirname(dirpath) + "/"
-        for root, dirs, files in os.walk(dirpath):
-            # if os.path.basename(root)[0] == '.':
-            # continue  # skip hidden directories
-            dirname = root.replace(basedir, "")
-            for f in files:
-                # if f[-1] == '~' or (f[0] == '.' and f != '.htaccess'):
-                # skip backup files and all hidden files except .htaccess
-                # continue
-                if not is_package:
-                    dirname = ""
-                fzip.write(root + "/" + f, dirname + "/" + f)
+        for root, _, files in os.walk(dirpath):
+            dirname = root.replace(basedir, "") if not is_package else ""
+            for file in files:
+                fzip.write(os.path.join(root, file), os.path.join(dirname, file))
 
     def pack_aws_lambda(self, lambda_file, base, packages, package_files=[], files={}):
-        fzip = zipfile.ZipFile(lambda_file, "w", zipfile.ZIP_DEFLATED)
-        base = f"{root_path}/{base}"
-        self.zip_dir(base, fzip, is_package=False)
-        for package in packages:
-            self.zip_dir(
-                f"{site_packages}/{package}",
-                fzip,
-            )
-        for f in package_files:
-            fzip.write(
-                f"{site_packages}/{f}",
-                f,
-            )
-        for f, path in files.items():
-            fzip.write(f"{path}/{f}", f)
-        fzip.close()
+        with zipfile.ZipFile(lambda_file, "w", zipfile.ZIP_DEFLATED) as fzip:
+            self.zip_dir(f"{root_path}/{base}", fzip, is_package=False)
+            for package in packages:
+                self.zip_dir(f"{site_packages}/{package}", fzip)
+            for file in package_files:
+                fzip.write(f"{site_packages}/{file}", file)
+            for file, path in files.items():
+                fzip.write(os.path.join(path, file), file)
 
     def pack_aws_lambda_layer(self, layer_file, packages, package_files=[], files={}):
-        fzip = zipfile.ZipFile(layer_file, "w", zipfile.ZIP_DEFLATED)
-        for package in packages:
-            self.zip_dir(
-                f"{site_packages}/{package}",
-                fzip,
-            )
-        for f in package_files:
-            fzip.write(
-                f"{site_packages}/{f}",
-                f,
-            )
-        for f, path in files.items():
-            fzip.write(f"{path}/{f}", f)
-        fzip.close()
+        with zipfile.ZipFile(layer_file, "w", zipfile.ZIP_DEFLATED) as fzip:
+            for package in packages:
+                self.zip_dir(f"{site_packages}/{package}", fzip)
+            for file in package_files:
+                fzip.write(f"{site_packages}/{file}", file)
+            for file, path in files.items():
+                fzip.write(os.path.join(path, file), file)
 
     def upload_aws_s3_bucket(self, lambda_file, bucket):
-        f = open(lambda_file, "rb")
-        self.aws_s3.Bucket(bucket).put_object(Key=lambda_file, Body=f)
+        with open(lambda_file, "rb") as file:
+            self.aws_s3.Bucket(bucket).put_object(Key=lambda_file, Body=file)
 
-    # Check if the stack exists.
     def _stack_exists(self, stack_name):
         try:
             response = self.aws_cloudformation.describe_stacks(StackName=stack_name)
             for stack in response["Stacks"]:
-                if stack["StackStatus"] == "DELETE_COMPLETE":
-                    continue
-                if stack_name == stack["StackName"]:
+                if (
+                    stack["StackStatus"] != "DELETE_COMPLETE"
+                    and stack["StackName"] == stack_name
+                ):
                     return True
             return False
         except ClientError as e:
-            if (
-                e.response["Error"]["Message"]
-                == f"Stack with id {stack_name} does not exist"
-            ):
+            if "does not exist" in e.response["Error"]["Message"]:
                 return False
             raise
 
-    # Retrieve the last version of the object in a S3 bucket.
     def _get_object_last_version(self, s3_key):
         object_summary = self.aws_s3.ObjectSummary(os.getenv("bucket"), s3_key)
         return object_summary.get()["VersionId"]
 
     def _get_layer_version_arn(self, layer_name):
         response = self.aws_lambda.list_layer_versions(LayerName=layer_name)
-        assert (
-            len(response["LayerVersions"]) > 0
-        ), f"Cannot find the lambda layer ({layer_name})."
-
+        if not response["LayerVersions"]:
+            raise ValueError(f"Cannot find the lambda layer ({layer_name}).")
         return response["LayerVersions"][0]["LayerVersionArn"]
 
     @classmethod
     def deploy(cls):
-        cf = cls()
+        instance = cls()
 
-        # 1. Package and upload the code.
-        for name, funct in lambda_config["functions"].items():
+        # Update or create CloudFormation stack
+        stack_name = sys.argv[-1]
+        template_path = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), f"{stack_name}.json"
+        )
+        template = json.load(open(template_path, "r"))
+
+        functions = []
+        layers = []
+        for resource, value in template["Resources"].items():
+            if value["Type"] == "AWS::Lambda::Function":
+                functions.append(value["Properties"]["FunctionName"])
+            elif value["Type"] == "AWS::Lambda::LayerVersion":
+                layers.append(value["Properties"]["LayerName"])
+
+        # Package and upload Lambda functions
+        for name, function in lambda_config["functions"].items():
             if name not in functions:
                 continue
-
             lambda_file = f"{name}.zip"
-            cf.pack_aws_lambda(
+            instance.pack_aws_lambda(
                 lambda_file,
-                funct["base"],
-                funct["packages"],
-                package_files=funct["package_files"],
-                files=funct["files"],
+                function["base"],
+                function["packages"],
+                package_files=function.get("package_files", []),
+                files=function.get("files", {}),
             )
-            cf.upload_aws_s3_bucket(lambda_file, os.getenv("bucket"))
-            logger.info(f"Upload the lambda package ({name}).")
+            instance.upload_aws_s3_bucket(lambda_file, os.getenv("bucket"))
+            logger.info(f"Uploaded the Lambda package ({name}).")
 
+        # Update Lambda and Layer configurations
+        for resource, value in template["Resources"].items():
+            if value["Type"] == "AWS::Lambda::Function":
+                cls._update_lambda_function_resource(instance, value)
+            elif value["Type"] == "AWS::Lambda::LayerVersion":
+                cls._update_lambda_layer_resource(instance, value)
+            elif value["Type"] == "AWS::IAM::Role" and os.getenv("iam_role_name"):
+                value["Properties"]["RoleName"] = os.getenv("iam_role_name")
+
+        # Package and upload Lambda layers
         for name, layer in lambda_config["layers"].items():
             if name not in layers:
                 continue
-
             layer_file = f"{name}.zip"
-            cf.pack_aws_lambda_layer(
+            instance.pack_aws_lambda_layer(
                 layer_file,
                 layer["packages"],
-                package_files=layer["package_files"],
-                files=layer["files"],
+                package_files=layer.get("package_files", []),
+                files=layer.get("files", {}),
             )
-            cf.upload_aws_s3_bucket(layer_file, os.getenv("bucket"))
-            logger.info(f"Upload the lambda layer package ({name}).")
-
-        # 2. Update the cloudformation stack.
-        stack_name = sys.argv[-1]
-        template = json.load(open(f"{stack_name}.json", "r"))
-
-        for key, value in template["Resources"].items():
-            if value["Type"] == "AWS::Lambda::Function":
-                function_name = value["Properties"]["FunctionName"]
-                function_file = f"{function_name}.zip"
-                function_version = f"{function_name}_version"
-                template["Resources"][key]["Properties"]["Layers"] = [
-                    (
-                        layer
-                        if isinstance(layer, dict)
-                        else cf._get_layer_version_arn(layer)
-                    )
-                    for layer in template["Resources"][key]["Properties"]["Layers"]
-                ]
-                template["Resources"][key]["Properties"]["Code"] = {
-                    "S3Bucket": os.getenv("bucket"),
-                    "S3ObjectVersion": os.getenv(
-                        function_version, cf._get_object_last_version(function_file)
-                    ),
-                    "S3Key": function_file,
-                }
-                template["Resources"][key]["Properties"]["Environment"]["Variables"] = (
-                    dict(
-                        (k, os.getenv(k, v))
-                        for k, v in template["Resources"][key]["Properties"][
-                            "Environment"
-                        ]["Variables"].items()
-                    )
-                )
-                if os.getenv("runtime"):
-                    template["Resources"][key]["Properties"]["Runtime"] = os.getenv(
-                        "runtime"
-                    )
-                if os.getenv("security_group_ids") and os.getenv("subnet_ids"):
-                    template["Resources"][key]["Properties"]["VpcConfig"] = {
-                        "SecurityGroupIds": os.getenv("security_group_ids").split(","),
-                        "SubnetIds": os.getenv("subnet_ids").split(","),
-                    }
-                if os.getenv("efs_access_point") and template["Resources"][key][
-                    "Properties"
-                ]["Environment"]["Variables"].get("EFSMOUNTPOINT"):
-                    template["Resources"][key]["Properties"]["FileSystemConfigs"] = [
-                        {
-                            "Arn": {
-                                "Fn::Sub": "arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/"
-                                + os.getenv("efs_access_point")
-                            },
-                            "LocalMountPath": os.getenv("efs_local_mount_path"),
-                        }
-                    ]
-            elif value["Type"] == "AWS::Lambda::LayerVersion":
-                layer_name = value["Properties"]["LayerName"]
-                layer_file = f"{layer_name}.zip"
-                layer_version = f"{layer_name}_version"
-                template["Resources"][key]["Properties"]["Content"] = {
-                    "S3Bucket": os.getenv("bucket"),
-                    "S3ObjectVersion": os.getenv(
-                        layer_version, cf._get_object_last_version(layer_file)
-                    ),
-                    "S3Key": layer_file,
-                }
-            elif value["Type"] == "AWS::IAM::Role" and os.getenv("iam_role_name"):
-                template["Resources"][key]["Properties"]["RoleName"] = os.getenv(
-                    "iam_role_name"
-                )
+            instance.upload_aws_s3_bucket(layer_file, os.getenv("bucket"))
+            logger.info(f"Uploaded the Lambda layer package ({name}).")
 
         params = {
             "StackName": stack_name,
@@ -320,50 +193,121 @@ class CloudformationStack(object):
             "Parameters": [],
         }
 
-        if cf._stack_exists(stack_name):
-            response = cf.aws_cloudformation.update_stack(**params)
-        else:
-            response = cf.aws_cloudformation.create_stack(**params)
-
+        response = (
+            instance.aws_cloudformation.update_stack(**params)
+            if instance._stack_exists(stack_name)
+            else instance.aws_cloudformation.create_stack(**params)
+        )
         logger.info(json.dumps(response, indent=4, cls=JSONEncoder, ensure_ascii=False))
 
-        stack = cf.aws_cloudformation.describe_stacks(StackName=stack_name)["Stacks"][0]
+        # Wait for stack to complete
+        instance._wait_for_stack_completion(stack_name)
 
-        while stack["StackStatus"].find("IN_PROGRESS") != -1:
+        # Execute hooks on deployment
+        for name, function_config in lambda_config["functions"].items():
+            if name in functions:
+                execute_hook(name, function_config, sys._getframe().f_code.co_name)
+
+    @staticmethod
+    def _update_lambda_function_resource(instance, resource):
+        function_name = resource["Properties"]["FunctionName"]
+        function_file = f"{function_name}.zip"
+        resource["Properties"]["Layers"] = [
+            (
+                instance._get_layer_version_arn(layer)
+                if not isinstance(layer, dict)
+                else layer
+            )
+            for layer in resource["Properties"]["Layers"]
+        ]
+        resource["Properties"]["Code"] = {
+            "S3Bucket": os.getenv("bucket"),
+            "S3ObjectVersion": os.getenv(
+                function_name + "_version",
+                instance._get_object_last_version(function_file),
+            ),
+            "S3Key": function_file,
+        }
+        resource["Properties"]["Environment"]["Variables"] = {
+            k: os.getenv(k, v)
+            for k, v in resource["Properties"]["Environment"]["Variables"].items()
+        }
+        if os.getenv("runtime"):
+            resource["Properties"]["Runtime"] = os.getenv("runtime")
+        if os.getenv("security_group_ids") and os.getenv("subnet_ids"):
+            resource["Properties"]["VpcConfig"] = {
+                "SecurityGroupIds": os.getenv("security_group_ids").split(","),
+                "SubnetIds": os.getenv("subnet_ids").split(","),
+            }
+        if os.getenv("efs_access_point") and resource["Properties"]["Environment"][
+            "Variables"
+        ].get("EFSMOUNTPOINT"):
+            resource["Properties"]["FileSystemConfigs"] = [
+                {
+                    "Arn": {
+                        "Fn::Sub": "arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/"
+                        + os.getenv("efs_access_point")
+                    },
+                    "LocalMountPath": os.getenv("efs_local_mount_path"),
+                }
+            ]
+
+    @staticmethod
+    def _update_lambda_layer_resource(instance, resource):
+        layer_name = resource["Properties"]["LayerName"]
+        layer_file = f"{layer_name}.zip"
+        resource["Properties"]["Content"] = {
+            "S3Bucket": os.getenv("bucket"),
+            "S3ObjectVersion": os.getenv(
+                layer_name + "_version", instance._get_object_last_version(layer_file)
+            ),
+            "S3Key": layer_file,
+        }
+
+    def _wait_for_stack_completion(self, stack_name):
+        stack = self.aws_cloudformation.describe_stacks(StackName=stack_name)["Stacks"][
+            0
+        ]
+        while "IN_PROGRESS" in stack["StackStatus"]:
             logger.info(
                 json.dumps(
                     stack["StackStatus"], indent=4, cls=JSONEncoder, ensure_ascii=False
                 )
             )
             sleep(5)
-
-            stack = cf.aws_cloudformation.describe_stacks(StackName=stack_name)[
+            stack = self.aws_cloudformation.describe_stacks(StackName=stack_name)[
                 "Stacks"
             ][0]
-
-        if stack["StackStatus"] == "CREATE_COMPLETE":
-            logger.info(
-                json.dumps(
-                    stack["StackStatus"], indent=4, cls=JSONEncoder, ensure_ascii=False
-                )
+        logger.info(
+            json.dumps(
+                stack["StackStatus"], indent=4, cls=JSONEncoder, ensure_ascii=False
             )
-        else:
-            logger.info(
-                json.dumps(
-                    stack["StackStatus"], indent=4, cls=JSONEncoder, ensure_ascii=False
-                )
-            )
+        )
 
-        # 3.Execute hooks on deploy.
-        for name, function_config in lambda_config["functions"].items():
-            if name not in functions:
-                continue
 
-            execute_hook(
-                lambda_function_name=name,
-                function_config=function_config,
-                hook_function_name=sys._getframe().f_code.co_name,
-            )
+def execute_hook(lambda_function_name, function_config, hook_function_name):
+    if not function_config.get("hooks") or not function_config.get("endpoint_id"):
+        return
+
+    packages = function_config["hooks"].get("packages", [])
+    events = function_config["hooks"].get("events", {})
+    hooks = events.get(hook_function_name, [])
+
+    for hook in hooks:
+        if all(k in hook for k in ["package_name", "function_name"]):
+            spec = importlib.util.find_spec(hook["package_name"])
+            if spec:
+                agent = importlib.import_module(hook["package_name"])
+                if "class_name" in hook:
+                    agent = getattr(agent, hook["class_name"])
+                agent = getattr(agent, hook["function_name"])
+                if callable(agent):
+                    agent(
+                        lambda_function_name.strip(),
+                        function_config["endpoint_id"].strip(),
+                        packages,
+                    )
+    logger.info(f"Executed {hook_function_name} hooks.")
 
 
 if __name__ == "__main__":
