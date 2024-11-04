@@ -67,3 +67,168 @@ This layered and modular workflow ensures seamless data integration and synchron
 
 - [**datawald_s3agency**](https://github.com/ideabosque/datawald_s3agency): Applies business logic to process and manage data for storage and retrieval in AWS S3.
 - [**s3_connector**](https://github.com/ideabosque/s3_connector): Connects with AWS S3 to facilitate file management and data storage operations within the DataWald ecosystem.
+
+## Installation and Configuration
+
+### Step 1: Clone Repositories
+
+1. Create a main project directory named `silvaengine`.
+2. Within this folder, clone the following repositories:
+    - [silvaengine_aws](https://github.com/ideabosque/silvaengine_aws)
+    - [datawald_deployment](https://github.com/ideabosque/datawald_deployment)
+
+### Step 2: Download and Set Up Docker
+
+1. Clone the [silvaengine_docker](https://github.com/ideabosque/silvaengine_docker) project.
+2. Create two directories named `logs` and `projects` inside the `www` directory at the root of the Docker Compose setup. Use the commands below:
+    
+    ```bash
+    $ mkdir www/logs
+    $ mkdir www/projects
+    ```
+    
+3. Place your SSH private and public key files in the `python/.ssh` directory.
+4. Set up a `.env` file in the root directory, using the provided `.env.example` for reference. Here’s a sample configuration:
+    
+    ```bash
+    PIP_INDEX_URL=https://pypi.org/simple/ # Or use <https://mirrors.aliyun.com/pypi/simple/> for users in China
+    PROJECTS_FOLDER={path to your projects directory}
+    PYTHON=python3.11 # Python version
+    DEBUGPY=/var/www/projects/silvaengine_aws/deployment/cloudformation_stack.py # Debug Python file path
+    ```
+    
+    **Example Configuration:**
+    
+    - `PIP_INDEX_URL`: https://pypi.org/simple/
+    - `PROJECTS_FOLDER`: "C:/Users/developer/GitHubRepos/silvaengine"
+    - `DEBUGPY`: /var/www/projects/silvaengine_aws/deployment/cloudformation_stack.py
+5. Build the Docker image:
+    
+    ```bash
+    $ docker compose build
+    ```
+    
+6. Start the Docker container:
+    
+    ```bash
+    $ docker compose up -d
+    ```
+    
+
+### Setup and Deployment
+
+1. **Create an S3 Bucket**: Ensure versioning is enabled (e.g., `xyz-silvaengine-aws`).
+2. **Configure the `.env` File**: Place this file inside the `datawald_deployment` folder with the following settings:
+    
+    ```bash
+    #### Stack Deployment Settings
+    root_path=../silvaengine_aws # Root path of the stack
+    site_packages=/var/python3.11/silvaengine/env/lib/python3.11/site-packages # Python packages path
+    
+    #### CloudFormation Settings
+    bucket=silvaengine-aws # S3 bucket for zip packages
+    region_name=us-west-2 # AWS region
+    aws_access_key_id=XXXXXXXXXXXXXXXXXXX # AWS Access Key ID
+    aws_secret_access_key=XXXXXXXXXXXXXXXXXXX # AWS Secret Access Key
+    
+    # AWS Lambda Function Variables
+    REGIONNAME=us-west-2 # AWS region for resources
+    EFSMOUNTPOINT=/mnt # EFS mount point (optional)
+    PYTHONPACKAGESPATH=pypackages # Folder for large packages (optional)
+    runtime=python3.11 # Lambda function runtime (optional)
+    security_group_ids=sg-XXXXXXXXXXXXXXXXXXX # Security group IDs (optional)
+    subnet_ids=subnet-XXXXXXXXXXXXXXXXXXX,subnet-XXXXXXXXXXXXXXXXXXX # Subnet IDs (optional)
+    efs_access_point=fsap-XXXXXXXXXXXXXXXXXXX # EFS access point (optional)
+    efs_local_mount_path=/mnt/pypackages # EFS local mount path (optional)
+    {function name or layer name}_version=XXXXXXXXXXXXXXXXXXX # Function or layer version (optional)
+    ```
+    
+    **Example Configuration:**
+    
+    ```bash
+    #### Stack Deployment Settings
+    root_path=../silvaengine_aws
+    site_packages=/var/python3.11/silvaengine/env/lib/python3.11/site-packages
+    
+    #### CloudFormation Settings
+    bucket=xyz-silvaengine-aws
+    region_name=us-west-2
+    aws_access_key_id=XXXXXXXXXXXXXXXXXXX
+    aws_secret_access_key=XXXXXXXXXXXXXXXXXXX
+    REGIONNAME=us-west-2
+    runtime=python3.11
+    ```
+    
+
+### Step 3: Deploy SilvaEngine Base
+
+1. Run the following command to access the container:
+    
+    ```bash
+    $ docker exec -it container-aws-suites /bin/bash
+    ```
+    
+2. Activate the virtual environment:
+    
+    ```bash
+    source /var/python3.11/silvaengine/env/bin/activate
+    ```
+    
+3. Navigate to the deployment directory and execute the CloudFormation stack:
+    
+    ```bash
+    cd ./datawald_deployment
+    python cloudformation_stack.py .env silvaengine
+    ```
+
+### Step 4: Deploy DataWald Integration Framework
+
+1. Add entries into the `se-endpoints` collection, using the `endpoint_id` from the `lambda_config.json` file located in the `datawald_deployment` directory. The format for each entry should be as follows:
+    
+    ```bash
+    {
+        "endpoint_id": {endpoint_id},
+        "code": 0,
+        "special_connection": true
+    }
+    ```
+    
+2. For each `endpoint_id` in the `lambda_config.json` file within `datawald_deployment`, insert two separate records into `se-connections`:
+    - One record using the static `api_key` value '#####':
+        
+        ```bash
+        {
+            "endpoint_id": {endpoint_id},
+            "api_key": "#####",
+            "functions": []
+        }
+        ```
+        
+    - Another record with the actual `api_key` associated with the deployed AWS API Gateway:
+        
+        ```bash
+        {
+            "endpoint_id": {endpoint_id},
+            "api_key": {api_key},
+            "functions": []
+        }
+        ```
+        
+3. To access the container, execute the following command:
+    
+    ```bash
+    $ docker exec -it container-aws-suites /bin/bash
+    ```
+    
+4. Activate the Python virtual environment by running:
+    
+    ```bash
+    source /var/python3.11/silvaengine/env/bin/activate
+    ```
+    
+5. Navigate to the `datawald_deployment` directory and execute the CloudFormation stack setup script:
+    
+    ```bash
+    cd ./datawald_deployment
+    sh dw_requirements.sh
+    ```
