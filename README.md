@@ -115,7 +115,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     ```
     
 
-### Setup and Deployment
+### Step 3: Setup and Deployment
 
 1. **Create an S3 Bucket**: Ensure versioning is enabled (e.g., `xyz-silvaengine-aws`).
 2. **Configure the `.env` File**: Place this file inside the `datawald_deployment` folder with the following settings:
@@ -160,7 +160,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     ```
     
 
-### Step 3: Deploy SilvaEngine Base
+### Step 4: Deploy SilvaEngine Base
 
 1. Run the following command to access the container:
     
@@ -181,7 +181,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     python cloudformation_stack.py .env silvaengine
     ```
 
-### Step 4: Deploy DataWald Integration Framework
+### Step 5: Deploy DataWald Integration Framework
 
 1. Add entries into the `se-endpoints` (DynamoDB Table) collection, using the `endpoint_id` from the `lambda_config.json` file located in the `datawald_deployment` directory. The format for each entry should be as follows:
     
