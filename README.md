@@ -93,7 +93,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     ```bash
     PIP_INDEX_URL=https://pypi.org/simple/ # Or use <https://mirrors.aliyun.com/pypi/simple/> for users in China
     PROJECTS_FOLDER={path to your projects directory}
-    PYTHON=python3.8 # Python version
+    PYTHON=python3.11 # Python version
     DEBUGPY=/var/www/projects/silvaengine_aws/deployment/cloudformation_stack.py # Debug Python file path
     ```
     
@@ -123,7 +123,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     ```bash
     #### Stack Deployment Settings
     root_path=../silvaengine_aws # Root path of the stack
-    site_packages=/var/python3.8/silvaengine/env/lib/python3.8/site-packages # Python packages path
+    site_packages=/var/python3.11/silvaengine/env/lib/python3.11/site-packages # Python packages path
     
     #### CloudFormation Settings
     bucket=silvaengine-aws # S3 bucket for zip packages
@@ -135,7 +135,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     REGIONNAME=us-west-2 # AWS region for resources
     EFSMOUNTPOINT=/mnt # EFS mount point (optional)
     PYTHONPACKAGESPATH=pypackages # Folder for large packages (optional)
-    runtime=python3.8 # Lambda function runtime (optional)
+    runtime=python3.11 # Lambda function runtime (optional)
     security_group_ids=sg-XXXXXXXXXXXXXXXXXXX # Security group IDs (optional)
     subnet_ids=subnet-XXXXXXXXXXXXXXXXXXX,subnet-XXXXXXXXXXXXXXXXXXX # Subnet IDs (optional)
     efs_access_point=fsap-XXXXXXXXXXXXXXXXXXX # EFS access point (optional)
@@ -148,7 +148,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     ```bash
     #### Stack Deployment Settings
     root_path=../silvaengine_aws
-    site_packages=/var/python3.8/silvaengine/env/lib/python3.8/site-packages
+    site_packages=/var/python3.11/silvaengine/env/lib/python3.11/site-packages
     
     #### CloudFormation Settings
     bucket=xyz-silvaengine-aws
@@ -156,7 +156,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     aws_access_key_id=XXXXXXXXXXXXXXXXXXX
     aws_secret_access_key=XXXXXXXXXXXXXXXXXXX
     REGIONNAME=us-west-2
-    runtime=python3.8
+    runtime=python3.11
     ```
     
 
@@ -165,13 +165,13 @@ This layered and modular workflow ensures seamless data integration and synchron
 1. Run the following command to access the container:
     
     ```bash
-    $ docker exec -it container-aws-suites /bin/bash
+    $ docker exec -it container-aws-suites-311 /bin/bash
     ```
     
 2. Activate the virtual environment:
     
     ```bash
-    source /var/python3.8/silvaengine/env/bin/activate
+    source /var/python3.11/silvaengine/env/bin/activate
     ```
     
 3. Navigate to the deployment directory and execute the CloudFormation stack:
@@ -217,13 +217,13 @@ This layered and modular workflow ensures seamless data integration and synchron
 3. To access the container, execute the following command:
     
     ```bash
-    $ docker exec -it container-aws-suites /bin/bash
+    $ docker exec -it container-aws-suites-311 /bin/bash
     ```
     
 4. Activate the Python virtual environment by running:
     
     ```bash
-    source /var/python3.8/silvaengine/env/bin/activate
+    source /var/python3.11/silvaengine/env/bin/activate
     ```
     
 5. Navigate to the `datawald_deployment` directory and execute the CloudFormation stack setup script:
