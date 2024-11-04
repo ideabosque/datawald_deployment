@@ -246,7 +246,8 @@
                 "pypng",
                 "pypng-0.20220715.0.dist-info",
                 "qrcode",
-                "yaml"
+                "yaml",
+                "ujson-5.10.0.dist-info"
             ],
             "package_files": [
                 "typing_extensions.py",
@@ -259,7 +260,8 @@
                 "xmltodict.py",
                 "jsonpatch.py",
                 "jsonpointer.py",
-                "png.py"
+                "png.py",
+                "ujson.cpython-38-x86_64-linux-gnu.so"
             ],
             "files": {}
         },
