@@ -165,7 +165,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 1. Run the following command to access the container:
     
     ```bash
-    $ docker exec -it container-aws-suites /bin/bash
+    $ docker exec -it container-aws-suites-311 /bin/bash
     ```
     
 2. Activate the virtual environment:
@@ -217,7 +217,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 3. To access the container, execute the following command:
     
     ```bash
-    $ docker exec -it container-aws-suites /bin/bash
+    $ docker exec -it container-aws-suites-311 /bin/bash
     ```
     
 4. Activate the Python virtual environment by running:
