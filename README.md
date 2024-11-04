@@ -183,7 +183,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 
 ### Step 4: Deploy DataWald Integration Framework
 
-1. Add entries into the `se-endpoints` collection, using the `endpoint_id` from the `lambda_config.json` file located in the `datawald_deployment` directory. The format for each entry should be as follows:
+1. Add entries into the `se-endpoints` (DynamoDB Table) collection, using the `endpoint_id` from the `lambda_config.json` file located in the `datawald_deployment` directory. The format for each entry should be as follows:
     
     ```bash
     {
@@ -193,7 +193,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     }
     ```
     
-2. For each `endpoint_id` in the `lambda_config.json` file within `datawald_deployment`, insert two separate records into `se-connections`:
+2. For each `endpoint_id` in the `lambda_config.json` file within `datawald_deployment`, insert two separate records into `se-connections` (DynamoDB table):
     - One record using the static `api_key` value '#####':
         
         ```bash
