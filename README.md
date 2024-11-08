@@ -72,23 +72,44 @@ This layered and modular workflow ensures seamless data integration and synchron
 
 ### Step 1: Clone Repositories
 
-1. Create a main project directory named `silvaengine`.
-2. Within this folder, clone the following repositories:
+1. Create a project general folder `datawald`. Inside of `datawald`, create a main project directory named `silvaengine`.
+
+    ```bash
+    $ mkdir -p datawald
+    $ mkdir datawald/silvaengine
+    $ cd datawald/silvaengine
+    ```
+
+2. Within the silvaengine folder, clone the following repositories:
     - [silvaengine_aws](https://github.com/ideabosque/silvaengine_aws)
     - [datawald_deployment](https://github.com/ideabosque/datawald_deployment)
 
+    ```bash
+    $ git clone git@github.com:ideabosque/silvaengine_aws.git
+    $ git clone git@github.com:ideabosque/silvaengine_docker.git
+    ```
+
 ### Step 2: Download and Set Up Docker
 
-1. Clone the [silvaengine_docker](https://github.com/ideabosque/silvaengine_docker) project.
+1. Now back to `datawald` folder, Clone the [silvaengine_docker](https://github.com/ideabosque/silvaengine_docker) project.
 2. Create two directories named `logs` and `projects` inside the `www` directory at the root of the Docker Compose setup. Use the commands below:
     
     ```bash
-    $ mkdir www/logs
+    $ cd ../
+    $ git clone git@github.com:ideabosque/silvaengine_docker.git
+    $ mkdir -p www/logs
     $ mkdir www/projects
     ```
     
 3. Place your SSH private and public key files in the `python/.ssh` directory.
-4. Set up a `.env` file in the root directory, using the provided `.env.example` for reference. Here’s a sample configuration:
+
+    ```bash
+    $ cd silvaengine_docker
+    $ mkdir python/.ssh
+    $ cp ~/.ssh/id_rsa python/.ssh/
+    ```
+
+4. Set up a `.env` file in the silvaengine_docker directory, using the provided `.env.example` for reference. Here’s a sample configuration:
     
     ```bash
     PIP_INDEX_URL=https://pypi.org/simple/ # Or use <https://mirrors.aliyun.com/pypi/simple/> for users in China
@@ -118,7 +139,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 ### Step 3: Setup and Deployment
 
 1. **Create an S3 Bucket**: Ensure versioning is enabled (e.g., `xyz-silvaengine-aws`).
-2. **Configure the `.env` File**: Place this file inside the `datawald_deployment` folder with the following settings:
+2. **Configure the `.env` File**: Place this file inside the `silvaengine/datawald_deployment` folder with the following settings:
     
     ```bash
     #### Stack Deployment Settings
