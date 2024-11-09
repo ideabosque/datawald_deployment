@@ -316,7 +316,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     - **input_queue_name**: Specifies the SQS queue configured for `SQSAgency` and `SQSConnector` to receive incoming messages.
     - **task_queue_name**: Indicates the SQS queue used in SilvaEngine to dispatch tasks for asynchronous operations.
     - **tx_type**: Enumerates the supported data types for integration, categorized into assets, persons, and transactions.
-2. **Configure the Core Module `datawald_interface_engine`**. Insert the following records into the `se-configdata` DynamoDB table:
+2. Configure the Core Module `datawald_interface_engine`. Insert the following records into the `se-configdata` DynamoDB table:
     
     ```bash
     {
@@ -357,3 +357,6 @@ This layered and modular workflow ensures seamless data integration and synchron
     - **max_entities_in_message_body**: Defines the maximum number of entities allowed in the message body when sending data via `task_queue`.
     - **sync_task_notification**: Configures notifications to trigger an asynchronous function based on `endpoint_id` and `data_type` when a synchronization task is completed or fails.
     - **task_queue_name**: Specifies the SQS queue used by SilvaEngine for dispatching tasks in asynchronous workflows.
+
+    3. Module Configuration for Each Application
+      a. NSAgency for NetSuite Integration: NSAgency facilitates seamless data exchange with NetSuite, automating synchronization for enhanced operational efficiency. For setup details, see the [DataWald NSAgency GitHub repository](https://github.com/ideabosque/datawald_nsagency).
