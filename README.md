@@ -185,7 +185,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 
 1. Add entries into the `se-endpoints` (DynamoDB Table) collection, using the `endpoint_id` from the `lambda_config.json` file located in the `datawald_deployment` directory. The format for each entry should be as follows:
     
-    ```bash
+    ```json
     {
         "endpoint_id": {endpoint_id},
         "code": 0,
@@ -196,7 +196,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 2. For each `endpoint_id` in the `lambda_config.json` file within `datawald_deployment`, insert two separate records into `se-connections` (DynamoDB table):
     - One record using the static `api_key` value '#####':
         
-        ```bash
+        ```json
         {
             "endpoint_id": {endpoint_id},
             "api_key": "#####",
@@ -206,7 +206,7 @@ This layered and modular workflow ensures seamless data integration and synchron
         
     - Another record with the actual `api_key` associated with the deployed AWS API Gateway:
         
-        ```bash
+        ```json
         {
             "endpoint_id": {endpoint_id},
             "api_key": {api_key},
@@ -237,7 +237,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 
 1. Initial Configuration Setup for the Foundation. To establish the base configuration, insert the following records into the `se-configdata` DynamoDB table:
     
-    ```bash
+    ```json
     {
       "setting_id": "datawald_agency",
       "variable": "DW_API_KEY",
@@ -318,7 +318,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     - **tx_type**: Enumerates the supported data types for integration, categorized into assets, persons, and transactions.
 2. Configure the Core Module `datawald_interface_engine`. Insert the following records into the `se-configdata` DynamoDB table:
     
-    ```bash
+    ```json
     {
       "setting_id": "datawald_interface_engine",
       "variable": "default_cut_date",
