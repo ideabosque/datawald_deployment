@@ -358,5 +358,5 @@ This layered and modular workflow ensures seamless data integration and synchron
     - **sync_task_notification**: Configures notifications to trigger an asynchronous function based on `endpoint_id` and `data_type` when a synchronization task is completed or fails.
     - **task_queue_name**: Specifies the SQS queue used by SilvaEngine for dispatching tasks in asynchronous workflows.
 
-    3. Module Configuration for Each Application
-      a. NSAgency for NetSuite Integration: NSAgency facilitates seamless data exchange with NetSuite, automating synchronization for enhanced operational efficiency. For setup details, see the [DataWald NSAgency GitHub repository](https://github.com/ideabosque/datawald_nsagency).
+3. Module Configuration for Each Application
+  a. NSAgency for NetSuite Integration: NSAgency facilitates seamless data exchange with NetSuite, automating synchronization for enhanced operational efficiency. For setup details, see the [DataWald NSAgency GitHub repository](https://github.com/ideabosque/datawald_nsagency).
