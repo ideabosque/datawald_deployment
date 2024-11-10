@@ -360,3 +360,5 @@ This layered and modular workflow ensures seamless data integration and synchron
 
 3. Module Configuration for Each Application
     1. NSAgency for NetSuite Integration: NSAgency facilitates seamless data exchange with NetSuite, automating synchronization for enhanced operational efficiency. For setup details, see the [DataWald NSAgency GitHub repository](https://github.com/ideabosque/datawald_nsagency).
+
+    2. DynamoDBAgency for Streamlined Data Integration: DynamoDBAgency automates data synchronization with DynamoDB, enhancing efficiency and data flow across systems. For setup, see the [DataWald DynamoDBAgency GitHub repository](https://github.com/ideabosque/datawald_dynamodbagency).
