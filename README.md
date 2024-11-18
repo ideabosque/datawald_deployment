@@ -377,95 +377,95 @@ This layered and modular workflow ensures seamless data integration and synchron
   
   4. Configure the setting_id for each function of each entity in the se-connections table as follows: use datawald_sqsagency for SQS, datawald_nsagency for NS, and datawald_dynamodbagency for DynamoDB.
 
-  NetSuite Configuration:
+    NetSuite Configuration:
 
-    ```json
-      {
-        "endpoint_id": "ns",
-        "api_key": "#####",
-        "functions": [
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
-          "function": "retrieve_entities_from_source",
-          "setting": "datawald_nsagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
-          "function": "insert_update_entities_to_target",
-          "setting": "datawald_nsagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
-          "function": "update_sync_task",
-          "setting": "datawald_nsagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
-          "function": "retry_sync_task",
-          "setting": "datawald_nsagency"
-          }
-        ]
-      }
-    ```
+      ```json
+        {
+          "endpoint_id": "ns",
+          "api_key": "#####",
+          "functions": [
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
+            "function": "retrieve_entities_from_source",
+            "setting": "datawald_nsagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
+            "function": "insert_update_entities_to_target",
+            "setting": "datawald_nsagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
+            "function": "update_sync_task",
+            "setting": "datawald_nsagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
+            "function": "retry_sync_task",
+            "setting": "datawald_nsagency"
+            }
+          ]
+        }
+      ```
 
-  SQS Configuration:
+    SQS Configuration:
 
-    ```json
-      {
-        "endpoint_id": "sqs",
-        "api_key": "#####",
-        "functions": [
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
-          "function": "retrieve_entities_from_source",
-          "setting": "datawald_sqsagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
-          "function": "insert_update_entities_to_target",
-          "setting": "datawald_sqsagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
-          "function": "update_sync_task",
-          "setting": "datawald_sqsagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
-          "function": "retry_sync_task",
-          "setting": "datawald_sqsagency"
-          }
-        ]
-      }
-    ```
+      ```json
+        {
+          "endpoint_id": "sqs",
+          "api_key": "#####",
+          "functions": [
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
+            "function": "retrieve_entities_from_source",
+            "setting": "datawald_sqsagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
+            "function": "insert_update_entities_to_target",
+            "setting": "datawald_sqsagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
+            "function": "update_sync_task",
+            "setting": "datawald_sqsagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
+            "function": "retry_sync_task",
+            "setting": "datawald_sqsagency"
+            }
+          ]
+        }
+      ```
 
-  DynamoDB Configuration:
+    DynamoDB Configuration:
 
-    ```json
-      {
-        "endpoint_id": "datamart",
-        "api_key": "#####",
-        "functions": [
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
-          "function": "retrieve_entities_from_source",
-          "setting": "datawald_dynamodbagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
-          "function": "insert_update_entities_to_target",
-          "setting": "datawald_dynamodbagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
-          "function": "update_sync_task",
-          "setting": "datawald_dynamodbagency"
-          },
-          {
-          "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
-          "function": "retry_sync_task",
-          "setting": "datawald_dynamodbagency"
-          }
-        ]
-      }
-    ```
+      ```json
+        {
+          "endpoint_id": "datamart",
+          "api_key": "#####",
+          "functions": [
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
+            "function": "retrieve_entities_from_source",
+            "setting": "datawald_dynamodbagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
+            "function": "insert_update_entities_to_target",
+            "setting": "datawald_dynamodbagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
+            "function": "update_sync_task",
+            "setting": "datawald_dynamodbagency"
+            },
+            {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
+            "function": "retry_sync_task",
+            "setting": "datawald_dynamodbagency"
+            }
+          ]
+        }
+      ```
