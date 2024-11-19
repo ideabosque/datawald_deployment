@@ -442,3 +442,5 @@ Insert the following records into the `se-configdata` DynamoDB table:
     ]
 }
 ```
+
+Feel free to [create a GitHub issue](https://github.com/ideabosque/datawald_deployment/issues/new) or [send us an email](mailto:ideabosque@gmail.com) for support regarding this application.
