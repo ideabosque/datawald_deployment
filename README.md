@@ -406,6 +406,16 @@ Insert the following records into the `se-configdata` DynamoDB table:
             "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
             "function": "insert_update_entities_to_target",
             "setting": "datawald_nsagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
+            "function": "update_sync_task",
+            "setting": "datawald_nsagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_ns",
+            "function": "retry_sync_task",
+            "setting": "datawald_nsagency"
         }
     ]
 }
@@ -422,6 +432,21 @@ Insert the following records into the `se-configdata` DynamoDB table:
             "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
             "function": "retrieve_entities_from_source",
             "setting": "datawald_sqsagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
+            "function": "insert_update_entities_to_target",
+            "setting": "datawald_sqsagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
+            "function": "update_sync_task",
+            "setting": "datawald_sqsagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_sqs",
+            "function": "retry_sync_task",
+            "setting": "datawald_sqsagency"
         }
     ]
 }
@@ -437,6 +462,21 @@ Insert the following records into the `se-configdata` DynamoDB table:
         {
             "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
             "function": "retrieve_entities_from_source",
+            "setting": "datawald_dynamodbagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
+            "function": "insert_update_entities_to_target",
+            "setting": "datawald_dynamodbagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
+            "function": "update_sync_task",
+            "setting": "datawald_dynamodbagency"
+        },
+        {
+            "aws_lambda_arn": "arn:aws:lambda:us-xxxx-x:xxxxxxxxxxxx:function:silvaengine_microcore_dynamodb",
+            "function": "retry_sync_task",
             "setting": "datawald_dynamodbagency"
         }
     ]
