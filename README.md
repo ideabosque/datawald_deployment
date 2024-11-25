@@ -130,7 +130,9 @@ This layered and modular workflow ensures seamless data integration and synchron
     region_name=us-west-2 # AWS region
     aws_access_key_id=XXXXXXXXXXXXXXXXXXX # AWS Access Key ID
     aws_secret_access_key=XXXXXXXXXXXXXXXXXXX # AWS Secret Access Key
-    
+    iam_role_name=silvaengine_exec (optional) # IAM role for SilvaEngine Base.
+    microcore_iam_role_name=silvaengine_microcore_dw_exec (optional) # IAM role for silvaEngine microcore.
+
     # AWS Lambda Function Variables
     REGIONNAME=us-west-2 # AWS region for resources
     EFSMOUNTPOINT=/mnt # EFS mount point (optional)

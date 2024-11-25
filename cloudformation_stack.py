@@ -372,8 +372,15 @@ class CloudformationStack(object):
                     ),
                     "S3Key": layer_file,
                 }
-            elif resource_type == "AWS::IAM::Role" and os.getenv("iam_role_name"):
-                properties["RoleName"] = os.getenv("iam_role_name")
+            elif resource_type == "AWS::IAM::Role":
+                if properties["RoleName"] == "silvaengine_exec" and os.getenv(
+                    "iam_role_name"
+                ):
+                    properties["RoleName"] = os.getenv("iam_role_name")
+                elif "silvaengine_microcore" in properties["RoleName"] and os.getenv(
+                    "microcore_iam_role_name"
+                ):
+                    properties["RoleName"] = os.getenv("microcore_iam_role_name")
 
     @classmethod
     def _monitor_stack_status(cls, cf, stack_name):
