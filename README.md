@@ -87,14 +87,14 @@ This layered and modular workflow ensures seamless data integration and synchron
     $ mkdir www/projects
     ```
     
-3. Place your SSH private and public key files in the `python/.ssh` directory.
+3. Place your SSH private and public key files in the `python/.ssh` directory (optional for furture customization).
 4. Set up a `.env` file in the root directory, using the provided `.env.example` for reference. Here’s a sample configuration:
     
     ```bash
     PIP_INDEX_URL=https://pypi.org/simple/ # Or use <https://mirrors.aliyun.com/pypi/simple/> for users in China
     PROJECTS_FOLDER={path to your projects directory}
     PYTHON=python3.11 # Python version
-    DEBUGPY=/var/www/projects/silvaengine_aws/deployment/cloudformation_stack.py # Debug Python file path
+    DEBUGPY=/var/www/projects/datawald_deployment/cloudformation_stack.py # Debug Python file path
     ```
     
     **Example Configuration:**
