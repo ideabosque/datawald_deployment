@@ -80,11 +80,12 @@ This layered and modular workflow ensures seamless data integration and synchron
 ### Step 2: Download and Set Up Docker
 
 1. Clone the [silvaengine_docker](https://github.com/ideabosque/silvaengine_docker) project.
-2. Create two directories named `logs` and `projects` inside the `www` directory at the root of the Docker Compose setup. Use the commands below:
+2. Create two directories named `logs` and `projects` inside the `www` directory and `.ssh` inside the `python` directory at the root of the Docker Compose setup. Use the commands below:
     
     ```bash
-    $ mkdir www/logs
-    $ mkdir www/projects
+    $ mkdir -p www/logs
+    $ mkdir -p www/projects
+    $ mkdir -p python/.ssh
     ```
     
 3. Place your SSH private and public key files in the `python/.ssh` directory (optional for furture customization).
