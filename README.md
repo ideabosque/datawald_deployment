@@ -95,7 +95,7 @@ This layered and modular workflow ensures seamless data integration and synchron
     PIP_INDEX_URL=https://pypi.org/simple/ # Or use <https://mirrors.aliyun.com/pypi/simple/> for users in China
     PROJECTS_FOLDER={path to your projects directory}
     PYTHON=python3.11 # Python version
-    DEBUGPY=/var/www/projects/datawald_deployment/cloudformation_stack.py # Debug Python file path
+    DEBUGPY=/var/www/projects/silvaengine_aws/deployment/cloudformation_stack.py # Debug Python file path
     ```
     
     **Example Configuration:**
