@@ -45,7 +45,7 @@ This layered and modular workflow ensures seamless data integration and synchron
 
 **Magento 2 Integration**
 
-- [**datawald_mage2agency**](https://github.com/ideabosque/datawald_dynamodbagency): Manages and processes data for Magento 2, embedding business logic to support e-commerce functions.
+- [**datawald_mage2agency**](https://github.com/ideabosque/datawald_mage2agency): Manages and processes data for Magento 2, embedding business logic to support e-commerce functions.
 - [**mage2_connector**](https://github.com/ideabosque/mage2_connector): Connects to Magento 2 to enable efficient data transactions and synchronization.
 
 **HubSpot Integration**
