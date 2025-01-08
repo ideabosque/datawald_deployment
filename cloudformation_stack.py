@@ -81,6 +81,7 @@ def execute_hook(lambda_function_name, function_config, hook_function_name):
             agent(
                 str(lambda_function_name).strip(),
                 str(function_config.get("endpoint_id")).strip(),
+                str(function_config.get("area", "core")).strip(),
                 packages,
             )
     logger.info(f"Execute {hook_function_name} hooks.")

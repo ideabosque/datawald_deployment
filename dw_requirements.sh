@@ -1,4 +1,4 @@
-echo "y" | pip uninstall monitor_engine && pip install git+https://github.com/ideabosque/monitor_engine.git#egg=monitor_engine
+echo "y" | pip uninstall silvaengine_resource && pip install git+https://github.com/ideabosque/silvaengine_resouces.git@main#egg=silvaengine_resource
 echo "y" | pip uninstall datawald_interface_engine && pip install git+https://github.com/ideabosque/datawald_interface_engine.git@main#egg=datawald_interface_engine
 echo "y" | pip uninstall datawald_connector && pip install git+https://github.com/ideabosque/datawald_connector.git@main#egg=datawald_connector
 echo "y" | pip uninstall datawald_agency && pip install git+https://github.com/ideabosque/datawald_agency.git@main#egg=datawald_agency

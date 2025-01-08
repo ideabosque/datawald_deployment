@@ -109,6 +109,42 @@
             "SilvaEngineLayer"
          ]
       },
+      "SilvaEngineAreaResourceHttp": {
+         "Type": "AWS::Lambda::Function",
+         "Properties": {
+            "FunctionName": "silvaengine_area_resource_http",
+            "Handler": "resources.handler",
+            "Layers": [
+               {
+                  "Ref": "SilvaEngineLayer"
+               }
+            ],
+            "Role": {
+               "Fn::GetAtt": [
+                  "SilvaEngineExecRole",
+                  "Arn"
+               ]
+            },
+            "Code": {
+               "S3Bucket": "silvaengine-aws",
+               "S3Key": "silvaengine_area_resource_http.zip"
+            },
+            "Runtime": "python3.8",
+            "Timeout": "900",
+            "Environment": {
+               "Variables": {
+                  "LOGGINGLEVEL": "logging.INFO",
+                  "REGIONNAME": "us-west-2",
+                  "FULL_EVENT_AREAS": "BOT"
+               }
+            },
+            "MemorySize": 512
+         },
+         "DependsOn": [
+            "SilvaEngineExecRole",
+            "SilvaEngineLayer"
+         ]
+      },
       "SilvaEngineAgentTask": {
          "Type": "AWS::Lambda::Function",
          "Properties": {
@@ -729,6 +765,103 @@
             "KeyType": "API_KEY",
             "UsagePlanId": {
                "Ref": "BetaUsagePlan"
+            }
+         }
+      },
+      "SilvaEngineHttpApi": {
+         "Type": "AWS::ApiGatewayV2::Api",
+         "Properties": {
+            "Name": "silvaengine_http_api",
+            "ProtocolType": "HTTP",
+            "CorsConfiguration": {
+               "AllowMethods": [
+                  "DELETE",
+                  "GET",
+                  "HEAD",
+                  "OPTIONS",
+                  "PATCH",
+                  "POST",
+                  "PUT"
+               ],
+               "AllowHeaders": [
+                  "Content-Type",
+                  "X-Amz-Date",
+                  "Authorization",
+                  "X-Api-Key",
+                  "X-Amz-Security-Token",
+                  "X-Requested-With",
+                  "X-CSRF-TOKEN"
+               ],
+               "AllowOrigins": [
+                  "*"
+               ],
+               "MaxAge": 86400
+            }
+         }
+      },
+      "AreaProxyRoute": {
+         "Type": "AWS::ApiGatewayV2::Route",
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineHttpApi"
+            },
+            "RouteKey": "ANY /{area}/{endpoint_id}/{proxy+}",
+            "Target": {
+               "Fn::Sub": "integrations/${ProxyIntegration}"
+            }
+         }
+      },
+      "ProxyIntegration": {
+         "Type": "AWS::ApiGatewayV2::Integration",
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineHttpApi"
+            },
+            "IntegrationType": "AWS_PROXY",
+            "IntegrationUri": {
+               "Fn::Sub": "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SilvaEngineAreaResourceHttp.Arn}/invocations"
+            },
+            "PayloadFormatVersion": "2.0"
+         }
+      },
+      "SilvaEngineHttpApiDeployment": {
+         "Type": "AWS::ApiGatewayV2::Deployment",
+         "DependsOn": [
+            "AreaProxyRoute"
+         ],
+         "Properties": {
+            "ApiId": {
+               "Ref": "SilvaEngineHttpApi"
+            }
+         }
+      },
+      "HttpBetaStage": {
+         "Type": "AWS::ApiGatewayV2::Stage",
+         "Properties": {
+            "StageName": "beta",
+            "Description": "Beta Stage",
+            "ApiId": {
+               "Ref": "SilvaEngineHttpApi"
+            },
+            "DeploymentId": {
+               "Ref": "SilvaEngineHttpApiDeployment"
+            },
+            "AutoDeploy": true
+         }
+      },
+      "LambdaInvokePermission": {
+         "Type": "AWS::Lambda::Permission",
+         "Properties": {
+            "FunctionName": {
+               "Fn::GetAtt": [
+                  "SilvaEngineAreaResourceHttp",
+                  "Arn"
+               ]
+            },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "apigateway.amazonaws.com",
+            "SourceArn": {
+               "Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SilvaEngineHttpApi.ApiId}/*/*"
             }
          }
       },
