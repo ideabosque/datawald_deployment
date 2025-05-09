@@ -210,7 +210,6 @@
                 "requests_toolbelt",
                 "attr",
                 "attrs",
-                "zeep",
                 "oauthlib",
                 "reportlab",
                 "reportlab-3.6.11.dist-info",
@@ -222,7 +221,6 @@
                 "markupsafe",
                 "humps",
                 "ordered_set",
-                "warlock",
                 "jsonschema",
                 "jsonschema-3.2.0.dist-info",
                 "importlib_resources",
@@ -252,8 +250,6 @@
                 "cached_property.py",
                 "requests_file.py",
                 "six.py",
-                "dicttoxml.py",
-                "xmltodict.py",
                 "jsonpatch.py",
                 "jsonpointer.py",
                 "png.py"
@@ -274,6 +270,8 @@
                 "datawald_mage2agency",
                 "datawald_hubspotagency",
                 "datawald_connector",
+                "zeep",
+                "warlock",
                 "suitetalk_connector",
                 "sqs_connector",
                 "dynamodb_connector",
@@ -287,7 +285,10 @@
                 "hubspot",
                 "hubspot_api_client-6.0.0.dist-info"
             ],
-            "package_files": [],
+            "package_files": [
+                "dicttoxml.py",
+                "xmltodict.py"
+            ],
             "files": {}
         }
     }
