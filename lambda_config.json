@@ -270,6 +270,7 @@
                 "datawald_mage2agency",
                 "datawald_hubspotagency",
                 "datawald_connector",
+                "cerberus",
                 "pytz",
                 "zeep",
                 "warlock",
