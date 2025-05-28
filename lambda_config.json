@@ -270,6 +270,8 @@
                 "datawald_mage2agency",
                 "datawald_hubspotagency",
                 "datawald_connector",
+                "humps",
+                "idna",
                 "cerberus",
                 "pytz",
                 "zeep",
